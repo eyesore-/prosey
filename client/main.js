@@ -10,7 +10,7 @@ let router = new VueRouter({
   mode: 'history',
   routes: [
     {
-      path: '/:channel?',
+      path: '/',
       name: 'mainContent',
       component: MainContent
     }

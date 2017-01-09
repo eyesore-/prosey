@@ -152,7 +152,10 @@ li.commentText + li.commentText {
   border-color: rgb(200, 200, 120);
 }
 
+
+
 /* THIS IS FOR THE MENU BAR */
+
 .ProseMirror-textblock-dropdown {
   min-width: 3em;
 }
