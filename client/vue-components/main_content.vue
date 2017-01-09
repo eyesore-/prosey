@@ -78,12 +78,6 @@
   #editor {
     height: 100%
   }
-  textarea, #editor div {
-    width: 100%;
-    height: 100%;
-    vertical-align: top;
-    padding: 0 20px;
-  }
   textarea {
     border: none;
     resize: none;
