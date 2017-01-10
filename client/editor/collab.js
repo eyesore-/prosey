@@ -38,7 +38,6 @@ class EditorConnection {
     this.dispatch = this.dispatch.bind(this)
     this.start()
   }
-
   // All state changes go through this
   dispatch(action) {
     let newEditState = null
@@ -64,29 +63,29 @@ class EditorConnection {
     } else if (action.type === 'poll') {
       this.state = new State(this.state.edit, 'poll')
       this.poll()
-    } else if (action.type == "recover") {
+    } else if (action.type === 'recover') {
       if (action.error.status && action.error.status < 500) {
         this.report.failure(err)
         this.state = new State(null, null)
       } else {
-        this.state = new State(this.state.edit, "recover")
+        this.state = new State(this.state.edit, 'recover')
         this.recover(action.error)
       }
-    } else if (action.type == "transaction") {
+    } else if (action.type === 'transaction') {
       newEditState = this.state.edit.apply(action.transaction)
     }
 
     if (newEditState) {
       let sendable
       if (newEditState.doc.content.size > 40000) {
-        if (this.state.comm != "detached") this.report.failure("Document too big. Detached.")
-        this.state = new State(newEditState, "detached")
-      } else if ((this.state.comm == "poll" || action.requestDone) && (sendable = this.sendable(newEditState))) {
+        if (this.state.comm !== 'detached') this.report.failure('Document too big. Detached.')
+        this.state = new State(newEditState, 'detached')
+      } else if ((this.state.comm === 'poll' || action.requestDone) && (sendable = this.sendable(newEditState))) {
         this.closeRequest()
-        this.state = new State(newEditState, "send")
+        this.state = new State(newEditState, 'send')
         this.send(newEditState, sendable)
       } else if (action.requestDone) {
-        this.state = new State(newEditState, "poll")
+        this.state = new State(newEditState, 'poll')
         this.poll()
       } else {
         this.state = new State(newEditState, this.state.comm)
@@ -98,12 +97,12 @@ class EditorConnection {
       if (this.view)
         this.view.updateState(this.state.edit)
       else
-        this.view = new MenuBarEditorView(document.querySelector("#editor"), {
+        this.view = new MenuBarEditorView(document.querySelector('#editor'), {
           state: this.state.edit,
-          dispatchTransaction: transaction => this.dispatch({type: "transaction", transaction}),
+          dispatchTransaction: transaction => this.dispatch({type: 'transaction', transaction}),
           menuContent: menu.fullMenu
         })
-        window.view = this.view.editor
+      window.view = this.view.editor
     } else if (this.view) {
       this.view.destroy()
       this.view = null
@@ -117,11 +116,12 @@ class EditorConnection {
       data = JSON.parse(data)
       this.report.success()
       this.backOff = 0
-      this.dispatch({type: "loaded",
-                     doc: schema.nodeFromJSON(data.doc),
-                     version: data.version,
-                     users: data.users,
-                     comments: {version: data.commentVersion, comments: data.comments}})
+      this.dispatch({
+        type: 'loaded',
+        doc: schema.nodeFromJSON(data.doc),
+        version: data.version,
+        users: data.users,
+        comments: {version: data.commentVersion, comments: data.comments}})
     }, err => {
       this.report.failure(err)
     })
@@ -132,26 +132,26 @@ class EditorConnection {
   // for a new version of the document to be created if the client
   // is already up-to-date.
   poll() {
-    let query = "version=" + getVersion(this.state.edit) + "&commentVersion=" + commentPlugin.getState(this.state.edit).version
-    this.run(GET(this.url + "/events?" + query)).then(data => {
+    let query = 'version=' + getVersion(this.state.edit) + '&commentVersion=' + commentPlugin.getState(this.state.edit).version
+    this.run(GET(this.url + '/events?' + query)).then(data => {
       this.report.success()
       data = JSON.parse(data)
       this.backOff = 0
       if (data.steps && (data.steps.length || data.comment.length)) {
         let tr = receiveTransaction(this.state.edit, data.steps.map(j => Step.fromJSON(schema, j)), data.clientIDs)
-        tr.setMeta(commentPlugin, {type: "receive", version: data.commentVersion, events: data.comment, sent: 0})
-        this.dispatch({type: "transaction", transaction: tr, requestDone: true})
+        tr.setMeta(commentPlugin, {type: 'receive', version: data.commentVersion, events: data.comment, sent: 0})
+        this.dispatch({type: 'transaction', transaction: tr, requestDone: true})
       } else {
         this.poll()
       }
       info.users.textContent = userString(data.users)
     }, err => {
-      if (err.status == 410 || badVersion(err)) {
+      if (err.status === 410 || badVersion(err)) {
         // Too far behind. Revert to server state
         report.failure(err)
-        this.dispatch({type: "restart"})
+        this.dispatch({type: 'restart'})
       } else if (err) {
-        this.dispatch({type: "recover", error: err})
+        this.dispatch({type: 'recover', error: err})
       }
     })
   }
@@ -164,29 +164,30 @@ class EditorConnection {
 
   // Send the given steps to the server
   send(editState, {steps, comments}) {
-    let json = JSON.stringify({version: getVersion(editState),
-                               steps: steps ? steps.steps.map(s => s.toJSON()) : [],
-                               clientID: steps ? steps.clientID : 0,
-                               comment: comments || []})
-    this.run(POST(this.url + "/events", json, "application/json")).then(data => {
+    let json = JSON.stringify({
+      version: getVersion(editState),
+      steps: steps ? steps.steps.map(s => s.toJSON()) : [],
+      clientID: steps ? steps.clientID : 0,
+      comment: comments || []})
+    this.run(POST(this.url + '/events', json, 'application/json')).then(data => {
       this.report.success()
       this.backOff = 0
       let tr = steps
           ? receiveTransaction(this.state.edit, steps.steps, repeat(steps.clientID, steps.steps.length))
           : this.state.edit.tr
-      tr.setMeta(commentPlugin, {type: "receive", version: JSON.parse(data).commentVersion, events: [], sent: comments.length})
-      this.dispatch({type: "transaction", transaction: tr, requestDone: true})
+      tr.setMeta(commentPlugin, {type: 'receive', version: JSON.parse(data).commentVersion, events: [], sent: comments.length})
+      this.dispatch({type: 'transaction', transaction: tr, requestDone: true})
     }, err => {
-      if (err.status == 409) {
+      if (err.status === 409) {
         // The client's document conflicts with the server's version.
         // Poll for changes and then try again.
         this.backOff = 0
-        this.dispatch({type: "poll"})
+        this.dispatch({type: 'poll'})
       } else if (badVersion(err)) {
         this.report.failure(err)
-        this.dispatch({type: "restart"})
+        this.dispatch({type: 'restart'})
       } else {
-        this.dispatch({type: "recover", error: err})
+        this.dispatch({type: 'recover', error: err})
       }
     })
   }
@@ -197,7 +198,7 @@ class EditorConnection {
     if (newBackOff > 1000 && this.backOff < 1000) this.report.delay(err)
     this.backOff = newBackOff
     setTimeout(() => {
-      if (this.state.comm == "recover") this.dispatch({type: "retry", requestDone: true})
+      if (this.state.comm === 'recover') this.dispatch({type: 'retry', requestDone: true})
     }, this.backOff)
   }
 
@@ -248,7 +249,6 @@ let connection = null
 
 function connectFromHash() {
   console.log('Connecting from Hash, hash is:', location.hash, 'url is', location)
-  // let isID = /^#edit-(.+)/.exec(location.hash)
   let isID = /^#(.+)/.exec(location.hash)
   if (isID) {
     if (connection) connection.close()
@@ -259,7 +259,7 @@ function connectFromHash() {
   }
 }
 
-function onDocumentReady(cb) {
+function onDocumentReady() {
   console.log('Document Ready Fired, setting up listeners on document:\n', document)
   info = {
     name: document.querySelector('#docname'),
@@ -273,8 +273,6 @@ function onDocumentReady(cb) {
 
   addEventListener('hashchange', connectFromHash)
   connectFromHash() || (location.hash = hash)
-
-  cb()
 }
 
 module.exports.onDocumentReady = onDocumentReady

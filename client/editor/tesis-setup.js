@@ -19,7 +19,7 @@ function TesisSetup(options) {
 
   return plugins.concat(new Plugin({
     props: {
-      attributes: {class: 'Tesis-style'},
+      attributes: {'class': 'Tesis-style'},
       menuContent: buildMenuItems(options.schema).fullMenu,
       floatingMenu: true
     }
