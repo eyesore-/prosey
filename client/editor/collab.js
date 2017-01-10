@@ -1,23 +1,22 @@
-const {exampleSetup, buildMenuItems} = require("prosemirror-example-setup")
-const {Step} = require("prosemirror-transform")
-const {MenuBarEditorView} = require("prosemirror-menu")
-const {EditorState} = require("prosemirror-state")
-const {history} = require("prosemirror-history")
-const {collab, receiveTransaction, sendableSteps, getVersion} = require("prosemirror-collab")
-const {MenuItem} = require("prosemirror-menu")
-// const crel = require("crel")
+import {buildMenuItems} from 'prosemirror-example-setup'
+import {TesisSetup} from './tesis-setup'
+import {Step} from 'prosemirror-transform'
+import {MenuBarEditorView} from 'prosemirror-menu'
+import {EditorState} from 'prosemirror-state'
+import {history} from 'prosemirror-history'
+import {collab, receiveTransaction, sendableSteps, getVersion} from 'prosemirror-collab'
+import {MenuItem} from 'prosemirror-menu'
 import Chance from 'chance'
+import {schema} from './schema'
+import {GET, POST} from './http'
+import {Reporter} from './reporter'
+import {commentPlugin, commentUI, addAnnotation, annotationIcon} from './comment'
+
 const chance = new Chance()
-
-const {schema} = require("./schema")
-const {GET, POST} = require("./http")
-const {Reporter} = require("./reporter")
-const {commentPlugin, commentUI, addAnnotation, annotationIcon} = require("./comment")
-
 const report = new Reporter()
 
 function badVersion(err) {
-  return err.status == 400 && /invalid version/i.test(err)
+  return err.status === 400 && /invalid version/i.test(err)
 }
 
 // edit: edit to doc, comm: comment on edit.
@@ -32,7 +31,7 @@ class EditorConnection {
   constructor(report, url) {
     this.report = report
     this.url = url
-    this.state = new State(null, "start")
+    this.state = new State(null, 'start')
     this.request = null
     this.backOff = 0
     this.view = null
@@ -43,26 +42,27 @@ class EditorConnection {
   // All state changes go through this
   dispatch(action) {
     let newEditState = null
-    if (action.type == "loaded") {
+    if (action.type === 'loaded') {
       info.users.textContent = userString(action.users) // FIXME ewww
+
       let editState = EditorState.create({
         doc: action.doc,
-        plugins: exampleSetup({schema, history: false}).concat([
+        plugins: TesisSetup({schema, history: false}).concat([
           history({preserveItems: true}),
           collab({version: action.version}),
           commentPlugin,
-          commentUI({dispatch: transaction => this.dispatch({type: "transaction", transaction}),
-                     getState: () => this.state.edit})
+          commentUI({dispatch: transaction => this.dispatch({type: 'transaction', transaction}),
+            getState: () => this.state.edit})
         ]),
         comments: action.comments
       })
-      this.state = new State(editState, "poll")
+      this.state = new State(editState, 'poll')
       this.poll()
-    } else if (action.type == "restart") {
-      this.state = new State(null, "start")
+    } else if (action.type === 'restart') {
+      this.state = new State(null, 'start')
       this.start()
-    } else if (action.type == "poll") {
-      this.state = new State(this.state.edit, "poll")
+    } else if (action.type === 'poll') {
+      this.state = new State(this.state.edit, 'poll')
       this.poll()
     } else if (action.type == "recover") {
       if (action.error.status && action.error.status < 500) {
@@ -215,7 +215,7 @@ class EditorConnection {
   close() {
     this.closeRequest()
     if (this.view) {
-      document.querySelector("#editor").removeChild(this.view.wrapper)
+      document.querySelector('#editor').removeChild(this.view.wrapper)
       this.view = null
       window.view = undefined
     }
@@ -229,7 +229,7 @@ function repeat(val, n) {
 }
 
 const annotationMenuItem = new MenuItem({
-  title: "Add an annotation",
+  title: 'Add an annotation',
   run: addAnnotation,
   select: state => addAnnotation(state),
   icon: annotationIcon
@@ -237,84 +237,33 @@ const annotationMenuItem = new MenuItem({
 let menu = buildMenuItems(schema)
 menu.fullMenu[0].push(annotationMenuItem)
 
-let info;
-
-//  = {
-//   name: document.querySelector("#docname"),
-//   users: document.querySelector("#users")
-// }
-// document.querySelector("#changedoc").addEventListener("click", e => {
-//   GET("/docs/").then(data => showDocList(e.target, JSON.parse(data)),
-//                      err => report.failure(err))
-// })
+let info
 
 function userString(n) {
-  if (n == null) n = 1
-  return "(" + n + " user" + (n == 1 ? "" : "s") + ")"
-}
-
-let docList
-function showDocList(node, list) {
-  if (docList) docList.parentNode.removeChild(docList)
-
-  let ul = docList = document.body.appendChild(crel("ul", {class: "doclist"}))
-  list.forEach(doc => {
-    ul.appendChild(crel("li", {"data-name": doc.id},
-                        doc.id + " " + userString(doc.users)))
-  })
-  ul.appendChild(crel("li", {"data-new": "true", style: "border-top: 1px solid silver; margin-top: 2px"},
-                      "Create a new document"))
-
-  let rect = node.getBoundingClientRect()
-  ul.style.top = (rect.bottom + 10 + pageYOffset - ul.offsetHeight) + "px"
-  ul.style.left = (rect.left - 5 + pageXOffset) + "px"
-
-  ul.addEventListener("click", e => {
-    if (e.target.nodeName == "LI") {
-      ul.parentNode.removeChild(ul)
-      docList = null
-      if (e.target.hasAttribute("data-name"))
-        location.hash = "#" + encodeURIComponent(e.target.getAttribute("data-name"))
-        // location.hash = "#edit-" + encodeURIComponent(e.target.getAttribute("data-name"))
-      else
-        newDocument()
-    }
-  })
-}
-// document.addEventListener("click", () => {
-//   if (docList) {
-//     docList.parentNode.removeChild(docList)
-//     docList = null
-//   }
-// })
-
-function newDocument() {
-  let name = prompt("Name the new document", "")
-  if (name)
-    location.hash = "#" + encodeURIComponent(name)
-    // location.hash = "#edit-" + encodeURIComponent(name)
+  if (n === null) n = 1
+  return n + ' user' + (n === 1 ? '' : 's')
 }
 
 let connection = null
 
 function connectFromHash() {
-  console.log("connecting from Hash, hash is:", location.hash, "url is", location)
+  console.log('Connecting from Hash, hash is:', location.hash, 'url is', location)
   // let isID = /^#edit-(.+)/.exec(location.hash)
   let isID = /^#(.+)/.exec(location.hash)
   if (isID) {
     if (connection) connection.close()
     info.name.textContent = decodeURIComponent(isID[1])
-    connection = window.connection = new EditorConnection(report, "/docs/" + isID[1])
+    connection = window.connection = new EditorConnection(report, '/docs/' + isID[1])
     connection.request.then(() => connection.view.editor.focus())
     return true
   }
 }
 
-function onDocumentReady() {
+function onDocumentReady(cb) {
   console.log('Document Ready Fired, setting up listeners on document:\n', document)
   info = {
-    name: document.querySelector("#docname"),
-    users: document.querySelector("#users")
+    name: document.querySelector('#docname'),
+    users: document.querySelector('#users')
   }
   console.log(info);
 
@@ -322,23 +271,10 @@ function onDocumentReady() {
 
   console.log('hash is set to:', hash);
 
-  // document.querySelector("#changedoc").addEventListener("click", e => {
-  //   GET("/docs/").then(data => showDocList(e.target, JSON.parse(data)),
-  //                      err => report.failure(err))
-  // })
-  //
-  // document.addEventListener("click", () => {
-  //   if (docList) {
-  //     docList.parentNode.removeChild(docList)
-  //     docList = null
-  //   }
-  // })
-  addEventListener("hashchange", connectFromHash)
+  addEventListener('hashchange', connectFromHash)
   connectFromHash() || (location.hash = hash)
+
+  cb()
 }
 
 module.exports.onDocumentReady = onDocumentReady
-
-// addEventListener("hashchange", connectFromHash)
-// connectFromHash() || (location.hash = "#tesis")
-// connectFromHash() || (location.hash = "#edit-Example")
