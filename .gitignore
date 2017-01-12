@@ -1,5 +1,6 @@
 client/dist
 node_modules/
+database/
 
 .eslintrc.js
 TO.DO
