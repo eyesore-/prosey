@@ -10,7 +10,8 @@ const WebSocketJSONStream = require('websocket-json-stream')
 ShareDB.types.register(richText.type)
 const backend = new ShareDB()
 const logger = new Logger(backend)
-createDoc(startServer)
+// createDoc(startServer)
+startServer()
 
 function createDoc(callback) {
   const connection = backend.connect()
