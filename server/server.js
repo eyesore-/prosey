@@ -29,7 +29,7 @@ function createDoc(callback) {
 
 function startServer() {
   const app = express();
-  app.use(express.static('./client'));
+  app.use(express.static(__dirname + '/../client'));
   const server = http.createServer(app);
 
   // Connects any incoming WebSocket connection to ShareDB
