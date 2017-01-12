@@ -20,7 +20,6 @@
     "finalhandler": "^0.5.1",
     "quill": "^1.1.9",
     "rich-text": "^3.1.0",
-    "serve-static": "^1.11.1",
     "sharedb": "^1.0.0-beta.7",
     "sharedb-logger": "^0.1.4",
     "sharedb-mongo": "^1.0.0-beta.3",
