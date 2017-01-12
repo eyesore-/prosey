@@ -2,7 +2,7 @@
   <div class="main-content">
     <navbar></navbar>
     <div>
-    <ToolBar :word-count="count"></ToolBar>
+    <Toolbar :word-count="count"></Toolbar>
 
     <div class="content-left">
     </div>
@@ -17,7 +17,7 @@
 
 <script>
   import Navbar from './navbar.vue'
-  import ToolBar from './tool_bar.vue'
+  import Toolbar from './tool_bar.vue'
   import sharedb from 'sharedb/lib/client'
   import richText from 'rich-text'
   import Quill from 'quill'
@@ -68,7 +68,7 @@
       }
     },
     components: {
-      ToolBar,
+      Toolbar,
       Navbar
     },
     methods: {
