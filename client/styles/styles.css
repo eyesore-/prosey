@@ -1,17 +1,11 @@
-body {
-  background-color: pink;
-}
-
 *, *::before, *::after {
   -webkit-box-sizing: border-box;
   -moz-box-sizing: border-box;
   box-sizing: border-box;
 }
 html, body{
-  display: table;
   height: 100vh;
   width: 100vw;
-  margin: 0;
 }
 body{
   padding-top: 13vh;
@@ -278,11 +272,8 @@ li.commentText + li.commentText {
   color: #666;
   padding: 1px 6px;
   top: 0; left: 0; right: 0;
-  border-bottom: 1px solid silver;
   background: white;
   z-index: 10;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box;
   overflow: visible;
 }
 
