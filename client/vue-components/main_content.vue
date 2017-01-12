@@ -1,4 +1,3 @@
-<!-- Created by Duncan on 12.28.2016 -->
 <template>
   <div class="main-content">
     <navbar></navbar>
@@ -6,18 +5,10 @@
     <ToolBar :word-count="count"></ToolBar>
 
     <div class="content-left">
-      <span>{{ text }}</span>
     </div>
 
     <div class="content-right float-r">
-      <div id="editor" @keyup="update" @input="update">
-        <div class="docinfo">
-          Connected to: <span id="connected">
-          <span id="docname">None</span>
-          <span id="users"></span>
-          </span>
-        </div>
-      </div>
+      <div id="editor"></div>
     </div>
 
   </div>
@@ -27,18 +18,45 @@
 <script>
   import Navbar from './navbar.vue'
   import ToolBar from './tool_bar.vue'
-  import collab from '../editor/collab'
+  import sharedb from 'sharedb/lib/client'
+  import richText from 'rich-text'
+  import Quill from 'quill'
 
   export default {
     created() {
     },
     mounted() {
-      collab.onDocumentReady()
-    },
-    computed: {
-      someText() {
-        return this.text
-      }
+      sharedb.types.register(richText.type);
+
+      const socket = new WebSocket('ws://' + window.location.host);
+      const connection = new sharedb.Connection(socket);
+
+      // For testing reconnection
+      window.disconnect = function() {
+        connection.close();
+        console.log('WS: Disconnected');
+      };
+      window.connect = function() {
+        let socket = new WebSocket('ws://' + window.location.host);
+        connection.bindToSocket(socket);
+        console.log('WS: Connected');
+      };
+
+      const doc = connection.get('docs', 'richtext');
+
+      doc.subscribe(function(err) {
+        if (err) throw err;
+        const quill = new Quill('#editor', {theme: 'bubble'});
+        quill.setContents(doc.data);
+        quill.on('text-change', function(delta, oldDelta, source) {
+          if (source !== 'user') return;
+          doc.submitOp(delta, {source: quill});
+        });
+        doc.on('op', function(op, source) {
+          if (source === quill) return;
+          quill.updateContents(op);
+        });
+      });
     },
     data() {
       return {
@@ -55,7 +73,6 @@
     },
     methods: {
       update(e) {
-        this.text = e.target.innerText
       }
     }
   }
@@ -78,7 +95,8 @@
     font-family: 'Monaco', courier, monospace;
   }
   #editor {
-    height: 100%
+    height: 100%;
+    border: 0.5em solid pink;
   }
   code {
     color: #f66;

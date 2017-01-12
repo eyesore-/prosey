@@ -1,24 +1,17 @@
-<!-- Created by Duncan on 12.28.2016 -->
 <template>
   <div class="left-side">
-    <div class="tool-bar">
-      <!-- Tool bar -->
 
-      <!-- end tool bar -->
-    </div>
-    <!-- word counter -->
     <div class="tool-render">
       <div class="count">
-        <p>count: <span> {{wordCount}} </span></p>
+        <p>count: {{wordCount}}</p>
       </div>
     </div>
+
   </div>
-  <!-- end word counter -->
 </template>
 
 <script>
   // import Methods from '../js/tool_bar.js'
-  // HTTP calls ect.
   // import Utils from '../js/utils.js'
 
   export default{
@@ -68,14 +61,6 @@
     -o-transition: left 0.5s ease-in-out;
     -ms-transition: left 0.5s ease-in-out;
     transition: left 0.5s ease-in-out;
-  }
-  .tool-bar{
-    position: fixed;
-    background-color: rgb(24, 24, 24);
-    top: 4em;
-    display: table;
-    width: 30vw;
-    height: 4em;
   }
   .horizontal-ul{
     display: table-row;
