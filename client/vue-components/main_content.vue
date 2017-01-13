@@ -1,13 +1,16 @@
 <template>
   <div class="main-content">
     <navbar></navbar>
-    <div>
-    <Toolbar :word-count="count"></Toolbar>
+    <div class="content">
 
     <div class="content-left">
+      <div class="word-count" v-if="count > 0">
+        <div>{{ count }} words</div>
+        <div>{{ time }} read</div>
+      </div>
     </div>
 
-    <div class="content-right float-r">
+    <div class="content-right">
       <div id="editor"></div>
     </div>
 
@@ -18,6 +21,7 @@
 <script>
   import Navbar from './navbar.vue'
   import Toolbar from './tool_bar.vue'
+  import {textStats} from '../utils/utils.js'
   import sharedb from 'sharedb/lib/client'
   import richText from 'rich-text'
   import Quill from 'quill'
@@ -34,19 +38,27 @@
       // For testing reconnection
       window.disconnect = function() {
         connection.close();
-        console.log('WS: Disconnected');
       };
       window.connect = function() {
         let socket = new WebSocket('ws://' + window.location.host);
         connection.bindToSocket(socket);
-        console.log('WS: Connected');
       };
 
       const doc = connection.get('docs', 'richtext');
+      const quill = new Quill('#editor', {
+        placeholder: 'Merry Christmas ya filthy animals!'
+        theme: 'bubble'
+      });
+
+      quill.on('text-change', () => {
+        let text = quill.getText()
+        let stats = textStats(text)
+        this.time = stats.display
+        this.count = stats.length
+      })
 
       doc.subscribe(function(err) {
         if (err) throw err;
-        const quill = new Quill('#editor', {theme: 'bubble'});
         quill.setContents(doc.data);
         quill.on('text-change', function(delta, oldDelta, source) {
           if (source !== 'user') return;
@@ -64,7 +76,7 @@
         input: '',
         channel: '',
         count: 0,
-        text: ''
+        time: ''
       }
     },
     components: {
@@ -82,13 +94,25 @@
   .main-content{
     width: 100vw;
   }
-  .content-right{
-    width: 70vw;
+  .content{
+    display: inline-flex;
     height: 87vh;
+    width: 100vw;
+  }
+  .content-right{
+    width: 80%;
   }
   .content-left{
-    position: fixed;
-    width: 30vw;
+    width: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+  }
+  .word-count{
+    font-size: 0.95em;
+    font-weight: 600;
+    margin: 0.75em;
+    opacity: 0.35;
   }
   html, body{
     color: #333;
@@ -96,7 +120,6 @@
   }
   #editor {
     height: 100%;
-    border: 0.5em solid pink;
   }
   code {
     color: #f66;

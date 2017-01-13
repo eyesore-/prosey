@@ -19,7 +19,7 @@ function createDoc(callback) {
     if (err) throw err
     if (doc.type === null) {
       doc.create([
-        {insert: 'Merry Christmas ya\' filthy animals.'}],
+        {}],
         'rich-text', callback)
       return;
     }

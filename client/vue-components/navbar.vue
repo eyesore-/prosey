@@ -4,7 +4,7 @@
     <div class="nav-left">
     </div>
     <div class="title">
-      <span>Untitled</span>
+      <span contenteditable="true">Untitled</span>
     </div>
     <div class="avatar-area">
 
