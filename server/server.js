@@ -10,35 +10,20 @@ const WebSocketJSONStream = require('websocket-json-stream')
 ShareDB.types.register(richText.type)
 const backend = new ShareDB({db})
 const logger = new Logger(backend)
-createDoc(startServer)
-
-function createDoc(callback) {
-  const connection = backend.connect()
-  const doc = connection.get('docs', 'richtext')
-  doc.fetch(function(err) {
-    if (err) throw err
-    if (doc.type === null) {
-      doc.create([
-        {}],
-        'rich-text', callback)
-      return;
-    }
-    callback()
-  });
-}
+startServer()
 
 function startServer() {
   const app = express();
-  app.use(express.static(__dirname + '/../client'));
+  app.use(express.static('./client'));
   const server = http.createServer(app);
 
   // Connects any incoming WebSocket connection to ShareDB
   let wss = new WebSocket.Server({server: server});
   wss.on('connection', function(ws, req) {
-    let stream = new WebSocketJSONStream(ws);
-    backend.listen(stream);
+    let stream = new WebSocketJSONStream(ws)
+    backend.listen(stream)
   })
 
-  server.listen(8080);
-  console.log('Listening on 80\u00B2');
+  server.listen(8080)
+  console.log('Listening on 80\u00B2')
 }

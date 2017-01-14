@@ -46,7 +46,7 @@
 
       const doc = connection.get('docs', 'richtext');
       const quill = new Quill('#editor', {
-        placeholder: 'Merry Christmas ya filthy animals!'
+        placeholder: 'Filthy animals.',
         theme: 'bubble'
       });
 
@@ -59,6 +59,9 @@
 
       doc.subscribe(function(err) {
         if (err) throw err;
+        if (!doc.data) {
+          doc.create([{insert: quill.getText()}], 'rich-text')
+        }
         quill.setContents(doc.data);
         quill.on('text-change', function(delta, oldDelta, source) {
           if (source !== 'user') return;
