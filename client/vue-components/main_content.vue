@@ -21,65 +21,55 @@
 <script>
   import Navbar from './navbar.vue'
   import Toolbar from './tool_bar.vue'
-  import {textStats} from '../utils/utils.js'
+  import {textStats, docSubscribe} from '../utils/utils.js'
   import sharedb from 'sharedb/lib/client'
   import richText from 'rich-text'
   import Quill from 'quill'
+  import Chance from 'chance'
 
   export default {
     created() {
-    },
+      let chance = new Chance()
+      let c = this.$route.params.channel
+      this.URI = c !== undefined && /^\w{5}$/.test(c) ? c : chance.word({length: 5})
+      },
     mounted() {
-      sharedb.types.register(richText.type);
+      sharedb.types.register(richText.type)
 
-      const socket = new WebSocket('ws://' + window.location.host);
-      const connection = new sharedb.Connection(socket);
-
+      let socket = new WebSocket(`ws://${window.location.host}`)
+      const connection = new sharedb.Connection(socket)
       // For testing reconnection
       window.disconnect = function() {
         connection.close();
-      };
-      window.connect = function() {
-        let socket = new WebSocket('ws://' + window.location.host);
+      }
+      window.connect = function(URI) {
+        let socket = new WebSocket(`ws://${window.location.host}`);
         connection.bindToSocket(socket);
-      };
+      }
 
       const doc = connection.get('docs', 'richtext');
-      const quill = new Quill('#editor', {
+      this.quill = new Quill('#editor', {
         placeholder: 'Filthy animals.',
         theme: 'bubble'
-      });
+      })
 
-      quill.on('text-change', () => {
-        let text = quill.getText()
+      this.quill.on('text-change', () => {
+        let text = this.quill.getText()
         let stats = textStats(text)
         this.time = stats.display
         this.count = stats.length
       })
 
-      doc.subscribe(function(err) {
-        if (err) throw err;
-        if (!doc.data) {
-          doc.create([{insert: quill.getText()}], 'rich-text')
-        }
-        quill.setContents(doc.data);
-        quill.on('text-change', function(delta, oldDelta, source) {
-          if (source !== 'user') return;
-          doc.submitOp(delta, {source: quill});
-        });
-        doc.on('op', function(op, source) {
-          if (source === quill) return;
-          quill.updateContents(op);
-        });
-      });
+      docSubscribe(this.quill, doc);
     },
     data() {
       return {
         ws: null,
-        input: '',
         channel: '',
         count: 0,
-        time: ''
+        time: '',
+        URI: '',
+        quill: ''
       }
     },
     components: {
